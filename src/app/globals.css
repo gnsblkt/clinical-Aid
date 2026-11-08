@@ -4,3 +4,50 @@
 .gem-heading{display:flex;align-items:center;justify-content:space-between;padding-right:8px}.gem-heading .side-label{padding-bottom:9px}.tiny-add{border:1px solid var(--line);background:#fff;border-radius:6px;color:#65718a;padding:4px;display:grid;place-items:center;cursor:pointer}.gem-row,.history-row{display:flex;align-items:center;border-radius:7px;margin:2px 0}.gem-row.selected,.history-row.selected{background:#edf2ff}.gem-pick,.history-pick{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:transparent;color:#65718a;padding:8px 9px;text-align:left;font-size:11px;cursor:pointer;overflow:hidden}.gem-pick span,.history-pick{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gem-row.selected .gem-pick,.history-row.selected .history-pick{color:#4268e8}.gem-edit,.history-delete{border:0;background:transparent;color:#a1a9b7;padding:6px;cursor:pointer;opacity:.65}.gem-edit:hover,.history-delete:hover{color:#4268e8;opacity:1}.history-list{max-height:220px;overflow:auto}.history-pick{display:block}.clear-history{float:right;border:0;background:transparent;color:#8b95a6;font-size:10px;cursor:pointer}.clear-history:disabled{opacity:.35;cursor:not-allowed}.discover-btn{margin-top:9px;color:#4268e8}.model-manual{margin-top:8px}.gem-instructions{resize:vertical;line-height:1.5}.active-gem,.composer-gem{display:flex;align-items:center;justify-content:center;gap:7px;color:#4268e8;background:#edf2ff;border-radius:8px;padding:8px 11px;font-size:11px;margin:16px auto 0;width:fit-content}.active-gem button,.composer-gem button{border:0;background:transparent;color:#4268e8;cursor:pointer;font-weight:600}.composer-gem{justify-content:flex-start;width:100%;margin:0 0 10px}.composer-gem button{margin-left:auto}.history-label{display:flex;justify-content:space-between;align-items:center}.history-label .clear-history{float:none}.gem-modal .primary-btn{margin-left:auto}.settings-actions .primary-btn:disabled{opacity:.5;cursor:not-allowed}@media(max-width:760px){.history-list{max-height:120px}.sidebar{display:none}.active-gem{max-width:100%;flex-wrap:wrap}}
 
 .mobile-sidebar-backdrop{display:none}@media(max-width:760px){.sidebar.mobile-open{display:flex;position:fixed;z-index:61;left:0;top:0;bottom:0;width:min(300px,86vw);overflow-y:auto;box-shadow:15px 0 45px #10182830}.mobile-sidebar-backdrop{display:block;position:fixed;inset:0;z-index:60;border:0;background:#10182870}.mobile-brand{border:0;background:transparent;cursor:pointer;font:inherit}.mobile-brand span{font-size:14px;margin-left:5px;color:#71809a}}
+
+
+/* Clinical Companion-inspired answer typography */
+.clinical-markdown{color:#263449;line-height:1.78;overflow-wrap:anywhere}
+.clinical-markdown>*:first-child{margin-top:0}
+.clinical-markdown .clinical-paragraph{margin:0 0 12px;white-space:normal}
+.clinical-markdown strong{font-weight:700;color:#172b43}
+.clinical-markdown a{color:#2563eb;text-decoration:underline;text-underline-offset:2px}
+.clinical-markdown .clinical-takeaway{margin:16px 0;padding:14px 16px;background:#ecfdf5;border-left:4px solid #10b981;border-radius:0 10px 10px 0;font-weight:600;color:#064e3b}
+.clinical-markdown .clinical-h1{font-size:1.35rem;font-weight:750;letter-spacing:-.025em;margin:22px 0 12px;color:#142b43}
+.clinical-markdown .clinical-section-heading{font-size:1rem;font-weight:750;letter-spacing:-.01em;color:#173b55;margin:22px 0 12px;padding:0 0 9px;border-bottom:1px solid #e2e8f0}
+.clinical-markdown .clinical-section-pill{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#64748b;margin:18px 0 10px}
+.clinical-markdown .clinical-section-pill:after{content:"";height:1px;flex:1;background:#e2e8f0}
+.clinical-markdown .clinical-list{padding-left:22px;margin:8px 0 14px}
+.clinical-markdown .clinical-list li{padding-left:3px;margin:5px 0}
+.clinical-markdown .clinical-table-wrap{width:100%;overflow-x:auto;margin:14px 0 18px;border:1px solid #e2e8f0;border-radius:10px}
+.clinical-markdown .clinical-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;line-height:1.55}
+.clinical-markdown .clinical-table th{background:#f1f5f9;color:#334155;font-weight:750;text-align:left;padding:11px 12px;border-bottom:1px solid #dbe3ec}
+.clinical-markdown .clinical-table td{padding:10px 12px;border-bottom:1px solid #edf0f4;vertical-align:top}
+.clinical-markdown .clinical-table tbody tr:nth-child(even){background:#f8fafc}
+.clinical-markdown .clinical-table tbody tr:last-child td{border-bottom:0}
+.clinical-markdown .clinical-code{overflow-x:auto;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:9px;padding:13px;font-size:12px}
+.clinical-markdown :not(pre)>code{background:#f1f5f9;padding:2px 5px;border-radius:4px;font-size:.9em}
+.clinical-markdown hr{border:0;border-top:1px solid #e5eaf0;margin:18px 0}
+.dark .clinical-markdown{color:#d5deeb}
+.dark .clinical-markdown strong{color:#f1f5f9}
+.dark .clinical-markdown .clinical-takeaway{background:rgba(2,44,34,.55);color:#a7f3d0;border-left-color:#10b981}
+.dark .clinical-markdown .clinical-section-heading{color:#dbeafe;border-color:#334155}
+.dark .clinical-markdown .clinical-section-pill{color:#94a3b8}
+.dark .clinical-markdown .clinical-section-pill:after{background:#334155}
+.dark .clinical-markdown .clinical-table-wrap{border-color:#334155}
+.dark .clinical-markdown .clinical-table th{background:#1e293b;color:#e2e8f0;border-color:#334155}
+.dark .clinical-markdown .clinical-table td{border-color:#293548}
+.dark .clinical-markdown .clinical-table tbody tr:nth-child(even){background:#172235}
+.dark .clinical-markdown .clinical-code,.dark .clinical-markdown :not(pre)>code{background:#1e293b;border-color:#334155;color:#e2e8f0}
+.export-menu{position:relative;display:inline-flex;flex-shrink:0}
+.export-trigger{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #dfe5ed;border-radius:8px;background:#fff;color:#536176;font-size:11px;font-weight:650;cursor:pointer;white-space:nowrap}
+.export-trigger:disabled{opacity:.45;cursor:not-allowed}
+.export-popover{position:absolute;z-index:30;right:0;bottom:calc(100% + 7px);min-width:220px;padding:6px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 12px 35px #17203320}
+.export-popover button{width:100%;display:flex;align-items:center;gap:9px;padding:10px;border:0;border-radius:7px;background:transparent;color:#334155;text-align:left;font-size:12px;cursor:pointer}
+.export-popover button:hover{background:#f1f5f9}
+.export-popover small{margin-left:auto;color:#94a3b8;font-size:10px}
+.message .export-menu{margin-top:9px}
+.export-menu.compact .export-trigger{padding:6px 9px;font-size:10px;background:#fbfcfe}
+.topbar>.export-menu{margin-left:auto}
+.topbar>.settings-btn{margin-left:0}
+@media(max-width:760px){.topbar>.export-menu .export-trigger{font-size:0;padding:8px}.topbar>.export-menu .export-trigger svg{width:16px;height:16px}.topbar>.settings-btn{margin-left:0}.clinical-markdown .clinical-table{min-width:460px}.message .export-menu{margin-top:8px}}
