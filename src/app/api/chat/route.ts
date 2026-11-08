@@ -49,7 +49,8 @@ function normalizeMessages(messages: Message[]) {
 export async function POST(request: NextRequest) {
   let body: any;
   try { body = await request.json(); } catch { return jsonError("Request body must be valid JSON.", 400); }
-  const { provider, apiKey, model, messages, baseUrl, stream = true, mode = "normal" } = body ?? {};\n  const queryMode = ["normal", "textbook", "deep_research"].includes(mode) ? mode : "normal";\n  if (mode !== undefined && !["normal", "textbook", "deep_research"].includes(mode)) return jsonError("Invalid query mode.", 400);
+  const { provider, apiKey, model, messages, baseUrl, stream = true, mode = "normal" } = body ?? {};
+  const queryMode = ["normal", "textbook", "deep_research"].includes(mode) ? mode : "normal";\n  if (mode !== undefined && !["normal", "textbook", "deep_research"].includes(mode)) return jsonError("Invalid query mode.", 400);
   const providers: Provider[] = ["gemini", "groq", "openrouter", "deepinfra", "openai", "claude", "deepseek", "custom"];
   if (!providers.includes(provider)) return jsonError("Unsupported AI provider.", 400);
   if (queryMode === "textbook") {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
       const encoder = new TextEncoder(); const decoder = new TextDecoder();
       const transformed = new ReadableStream({ async start(controller) {
         const reader = response.body!.getReader(); let buffer = "";
-        try { while (true) { const result = await reader.read(); if (result.done) break; buffer += decoder.decode(result.value, { stream: true }); const lines = buffer.split(/\\r?\\n/); buffer = lines.pop() || "";
+        try { while (true) { const result = await reader.read(); if (result.done) break; buffer += decoder.decode(result.value, { stream: true }); const lines = buffer.split(/\r?\n/); buffer = lines.pop() || "";
           for (const line of lines) { if (!line.startsWith("data:")) continue; const raw = line.slice(5).trim(); if (!raw || raw === "[DONE]") continue;
             try { const event = JSON.parse(raw); const value = event?.data?.answer ?? event?.answer ?? event?.data?.content ?? event?.content ?? event?.data?.delta ?? event?.delta ?? ""; const text = typeof value === "string" ? value : (value?.content ?? value?.text ?? ""); if (text) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: text } }] }) + "\\n\\n")); } catch {}
           }
