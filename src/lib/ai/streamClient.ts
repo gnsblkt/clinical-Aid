@@ -42,12 +42,6 @@ async function readSSE(res: Response, onChunk: (s: string)=>void, signal?: Abort
     }
   } finally { reader.releaseLock(); }
 }
-async function streamGemini(cfg: ConnectionConfig, messages: ChatMessage[], onChunk: (s:string)=>void, signal?: AbortSignal) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(cfg.apiKey)}`;
-  const prompt = messagesWithSystem(messages).map(m=>`${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
-  const res = await fetch(url, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{temperature:0.3}}), signal });
-  await readSSE(res, (chunk)=>{ /* Gemini event payloads are parsed below in custom reader. */ void chunk; }, signal);
-}
 async function streamGeminiActual(cfg: ConnectionConfig, messages: ChatMessage[], onChunk: (s:string)=>void, signal?: AbortSignal) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(cfg.apiKey)}`;
   const contents = messages.filter(m=>m.role!=="system").map(m=>({role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]}));
