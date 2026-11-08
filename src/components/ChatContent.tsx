@@ -4,11 +4,11 @@ import {useMemo,useState} from "react";
 import ReactMarkdown,{type Components} from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
-import rehypeSanitize from "rehype-sanitize";
+import rehypeSanitize,{defaultSchema} from "rehype-sanitize";
 import {Download,FileText,FileType,ChevronDown} from "lucide-react";
 
 export type ExportMessage={role:"user"|"assistant";content:string};
-const components:Components={
+const clinicalSchema={...defaultSchema,attributes:{...defaultSchema.attributes,div:[...(((defaultSchema.attributes as any).div as any[])||[]),"className"]}} as any;\nfunction remarkClinicalSections(){return (tree:any)=>{const nodes=tree.children||[];for(let i=0;i<nodes.length;i++){const node=nodes[i];if(node.type!=="heading")continue;const label=(node.children||[]).map((child:any)=>child.value||"").join("").trim().toLowerCase().replace(/\\s+/g," ");if(!/^(core concept|high[- ]yield pearls|differentials?|references)$/.test(label))continue;let end=i+1;while(end<nodes.length&&!(nodes[end].type==="heading"&&nodes[end].depth<=node.depth))end++;const grouped=nodes.splice(i,end-i);nodes.splice(i,0,{type:"clinicalSectionCard",data:{hName:"div",hProperties:{className:["clinical-section-card"]}},children:grouped});}};}\nconst components:Components={
   blockquote:({children})=><blockquote className="clinical-takeaway">{children}</blockquote>,
   h1:({children})=><h1 className="clinical-h1">{children}</h1>,
   h2:({children})=><h2 className="clinical-section-heading">{children}</h2>,
@@ -24,7 +24,7 @@ const components:Components={
   pre:({children})=><pre className="clinical-code">{children}</pre>,
 };
 export function AnswerRenderer({content}:{content:string}){
-  return <div className="clinical-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw,rehypeSanitize]} components={components}>{content}</ReactMarkdown></div>;
+  return <div className="clinical-markdown"><ReactMarkdown remarkPlugins={[remarkGfm,remarkClinicalSections]} rehypePlugins={[rehypeRaw,[rehypeSanitize,clinicalSchema]]} components={components}>{content}</ReactMarkdown></div>;
 }
 
 function escapeHtml(value:string){return value.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c] as string));}
