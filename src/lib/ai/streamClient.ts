@@ -112,7 +112,7 @@ async function consumeSSE(
 }
 
 function configFromOptions(opts: StreamOptions): ConnectionConfig {
-  const storedProvider = getBrowserStorage()?.getItem("clinical_aid_active_provider");
+  const storedProvider = readBrowserValue("clinical_aid_active_provider");
   const provider =
     opts.provider ??
     (storedProvider && PROVIDERS.includes(storedProvider as AIProvider) ? (storedProvider as AIProvider) : "openai");
