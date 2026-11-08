@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
   let body: any;
   try { body = await request.json(); } catch { return jsonError("Request body must be valid JSON.", 400); }
   const { provider, apiKey, model, messages, baseUrl, stream = true, mode = "normal" } = body ?? {};
-  const queryMode = ["normal", "textbook", "deep_research"].includes(mode) ? mode : "normal";\n  if (mode !== undefined && !["normal", "textbook", "deep_research"].includes(mode)) return jsonError("Invalid query mode.", 400);
+  const queryMode = ["normal", "textbook", "deep_research"].includes(mode) ? mode : "normal";
+  if (mode !== undefined && !["normal", "textbook", "deep_research"].includes(mode)) return jsonError("Invalid query mode.", 400);
   const providers: Provider[] = ["gemini", "groq", "openrouter", "deepinfra", "openai", "claude", "deepseek", "custom"];
   if (!providers.includes(provider)) return jsonError("Unsupported AI provider.", 400);
   if (queryMode === "textbook") {
