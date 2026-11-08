@@ -1,0 +1,127 @@
+export const runtime = "edge";
+
+import { NextRequest } from "next/server";
+
+type Provider = "gemini" | "groq" | "openrouter" | "deepinfra" | "openai" | "claude" | "deepseek" | "custom";
+type Message = { role: "system" | "user" | "assistant"; content: string };
+const BASES: Partial<Record<Provider, string>> = {
+  groq: "https://api.groq.com/openai/v1",
+  openrouter: "https://openrouter.ai/api/v1",
+  deepinfra: "https://api.deepinfra.com/v1/openai",
+  openai: "https://api.openai.com/v1",
+  deepseek: "https://api.deepseek.com/v1",
+  claude: "https://api.anthropic.com/v1",
+};
+const SYSTEM = "You are Clinical Aid, a careful medical education and clinical reasoning assistant. Prioritize evidence-based medicine and standard references such as Harrison's, Nelson, Oxford Handbook, WHO, CDC, NICE, and relevant specialty guidelines. Distinguish established facts, recommendations, and uncertainty. Organize clinical answers with concise answer, reasoning, differential, investigations, management principles, red flags, and source names when relevant. Do not fabricate citations or page numbers. This is educational decision support, not a substitute for clinician judgment or local protocols.";
+
+function jsonError(message: string, status: number) {
+  return Response.json({ error: { message } }, { status });
+}
+function safeCustomUrl(value: string) {
+  let url: URL;
+  try { url = new URL(value); } catch { throw new Error("Custom Base URL must be a valid absolute URL."); }
+  const host = url.hostname.toLowerCase();
+  if (url.protocol !== "https:") throw new Error("Custom endpoints must use HTTPS.");
+  if (host === "localhost" || host.endsWith(".localhost") || host === "metadata.google.internal" ||
+      host === "0.0.0.0" || host === "::1" || /^127\./.test(host) || /^10\./.test(host) ||
+      /^192\.168\./.test(host) || /^169\.254\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host)) {
+    throw new Error("Private, loopback, and link-local custom endpoints are not allowed.");
+  }
+  url.search = "";
+  url.hash = "";
+  return url.toString().replace(/\/+$/, "");
+}
+function getBase(provider: Provider, baseUrl?: string) {
+  if (provider === "custom") {
+    if (!baseUrl) throw new Error("Custom Base URL is required.");
+    return safeCustomUrl(baseUrl);
+  }
+  if (baseUrl?.trim()) return safeCustomUrl(baseUrl.trim());
+  const base = BASES[provider];
+  if (!base) throw new Error("Unsupported provider.");
+  return base;
+}
+function normalizeMessages(messages: Message[]) {
+  const valid = messages.filter(m => m && ["system", "user", "assistant"].includes(m.role) && typeof m.content === "string");
+  return [{ role: "system", content: SYSTEM }, ...valid.filter(m => m.role === "system"), ...valid.filter(m => m.role !== "system")];
+}
+export async function POST(request: NextRequest) {
+  let body: any;
+  try { body = await request.json(); } catch { return jsonError("Request body must be valid JSON.", 400); }
+  const { provider, apiKey, model, messages, baseUrl, stream = true } = body ?? {};
+  const providers: Provider[] = ["gemini", "groq", "openrouter", "deepinfra", "openai", "claude", "deepseek", "custom"];
+  if (!providers.includes(provider)) return jsonError("Unsupported AI provider.", 400);
+  if (typeof apiKey !== "string" || !apiKey.trim() || apiKey.length > 4096) return jsonError("A valid API key is required.", 400);
+  if (typeof model !== "string" || !model.trim() || model.length > 256) return jsonError("A valid model ID is required.", 400);
+  if (!Array.isArray(messages) || messages.length < 1 || messages.length > 100) return jsonError("Messages must contain between 1 and 100 entries.", 400);
+  if (!messages.every((m: any) => m && ["system", "user", "assistant"].includes(m.role) && typeof m.content === "string" && m.content.length <= 100000)) return jsonError("Invalid message format.", 400);
+
+  let upstreamUrl: string;
+  try {
+    if (provider === "gemini") {
+      upstreamUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) +
+        (stream ? ":streamGenerateContent?alt=sse&key=" : ":generateContent?key=") + encodeURIComponent(apiKey);
+    } else if (provider === "claude") {
+      upstreamUrl = getBase(provider, baseUrl) + "/messages";
+    } else {
+      upstreamUrl = getBase(provider, baseUrl) + "/chat/completions";
+    }
+  } catch (error) { return jsonError(error instanceof Error ? error.message : "Invalid provider endpoint.", 400); }
+
+  const normalized = normalizeMessages(messages);
+  let headers: Record<string, string> = { "Content-Type": "application/json" };
+  let payload: Record<string, unknown>;
+  if (provider === "gemini") {
+    const system = normalized.filter(m => m.role === "system").map(m => m.content).join("\n\n");
+    payload = {
+      systemInstruction: { parts: [{ text: system }] },
+      contents: normalized.filter(m => m.role !== "system").map(m => ({
+        role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }]
+      })),
+      generationConfig: { temperature: 0.3, ...(stream ? {} : { maxOutputTokens: 1 }) }
+    };
+  } else if (provider === "claude") {
+    headers = { ...headers, "x-api-key": apiKey, "anthropic-version": "2023-06-01" };
+    payload = {
+      model, max_tokens: stream ? 4096 : 1, stream,
+      system: normalized.filter(m => m.role === "system").map(m => m.content).join("\n\n"),
+      messages: normalized.filter(m => m.role !== "system").map(m => ({ role: m.role, content: m.content }))
+    };
+  } else {
+    headers.Authorization = "Bearer " + apiKey;
+    if (provider === "openrouter") {
+      headers["HTTP-Referer"] = request.headers.get("origin") || "https://clinical-aid.app";
+      headers["X-Title"] = "Clinical Aid";
+    }
+    payload = {
+      model, messages: normalized, stream,
+      ...(stream ? { max_tokens: 4096 } : { max_tokens: 1 })
+    };
+  }
+
+  try {
+    const upstream = await fetch(upstreamUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+      signal: request.signal
+    });
+    if (!upstream.ok) {
+      const detail = await upstream.text();
+      return new Response(detail || JSON.stringify({ error: { message: "Provider request failed." } }), {
+        status: upstream.status,
+        headers: { "Content-Type": upstream.headers.get("content-type") || "application/json", "Cache-Control": "no-store" }
+      });
+    }
+    const responseHeaders = new Headers({
+      "Content-Type": upstream.headers.get("content-type") || (stream ? "text/event-stream; charset=utf-8" : "application/json"),
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no"
+    });
+    return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") return jsonError("Request was cancelled.", 499);
+    return jsonError(error instanceof Error ? error.message : "Unable to reach AI provider.", 502);
+  }
+}
