@@ -147,7 +147,7 @@ async function proxyRequest(
       baseUrl: config.baseUrl,
       messages,
       stream,
-      researchMode
+      mode
     }),
     signal,
     cache: "no-store"
