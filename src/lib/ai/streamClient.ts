@@ -6,7 +6,7 @@ export type StreamOptions = {
   apiKey?: string;
   model?: string;
   baseUrl?: string;
-  researchMode?: boolean;
+  mode?: "normal" | "textbook" | "deep_research";
   onChunk: (chunk: string) => void;
   onError?: (error: Error) => void;
   onFinish?: () => void;
@@ -159,7 +159,7 @@ export async function streamMedicalChat(opts: StreamOptions) {
     const config = configFromOptions(opts);
     if (!config.apiKey.trim()) throw new Error("API key missing. Open Settings and add your provider key.");
     if (!config.model.trim()) throw new Error("Model ID missing. Set a model in provider Settings.");
-    const response = await proxyRequest(config, opts.messages, true, opts.signal, opts.researchMode);
+    const response = await proxyRequest(config, opts.messages, true, opts.signal, opts.mode ?? "normal");
     await consumeSSE(response, config.provider, opts.onChunk, opts.signal);
     opts.onFinish?.();
   } catch (error) {
