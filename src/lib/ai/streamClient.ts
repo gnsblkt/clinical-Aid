@@ -157,8 +157,8 @@ async function proxyRequest(
 export async function streamMedicalChat(opts: StreamOptions) {
   try {
     const config = configFromOptions(opts);
-    if (!config.apiKey.trim()) throw new Error("API key missing. Open Settings and add your provider key.");
-    if (!config.model.trim()) throw new Error("Model ID missing. Set a model in provider Settings.");
+    if ((opts.mode ?? "normal") !== "textbook" && !config.apiKey.trim()) throw new Error("API key missing. Open Settings and add your provider key.");
+    if ((opts.mode ?? "normal") !== "textbook" && !config.model.trim()) throw new Error("Model ID missing. Set a model in provider Settings.");
     const response = await proxyRequest(config, opts.messages, true, opts.signal, opts.mode ?? "normal");
     await consumeSSE(response, config.provider, opts.onChunk, opts.signal);
     opts.onFinish?.();
