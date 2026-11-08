@@ -55,7 +55,7 @@ function plainText(md:string){return md.replace(/!\[([^\]]*)\]\([^)]+\)/g,"$1").
 function referencesFor(messages:ExportMessage[]){const all=messages.map(m=>m.content).join("\n");return Array.from(new Set(all.match(/https?:\/\/[^\s)\]>]+/g)||[]));}
 function combinedMarkdown(messages:ExportMessage[],title:string,stamp:string){
   const refs=referencesFor(messages);
-  return `# ${title}\n\nGenerated: ${stamp}\n\n`+messages.map(m=>`## ${m.role==="assistant"?"Clinical Aid":"User"}\n\n${m.content}`).join("\n\n---\n\n")+(refs.length?"\n\n## Source references\n\n"+refs.map(r=>"- "+r).join("\n"):"");
+  return `# Clinical Aid - Clinical Summary\n\n${title}\n\nGenerated: ${stamp}\n\n`+messages.map(m=>`## ${m.role==="assistant"?"Clinical Aid":"User"}\n\n${m.content}`).join("\n\n---\n\n")+"\n\n## Source references\n\n"+(refs.length?refs.map(r=>"- "+r).join("\n"):"No external URLs were embedded in the response.");
 }
 function downloadBlob(blob:Blob,name:string){const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
 function printPdf(html:string,title:string){
@@ -89,7 +89,7 @@ async function exportDocx(messages:ExportMessage[],title:string,stamp:string){
       children.push(new Paragraph({text:plainText(line)}));
     }flushTable();children.push(new Paragraph({text:" "}));
   }
-  if(refs.length){children.push(new Paragraph({text:"Source references",heading:HeadingLevel.HEADING_1}));refs.forEach(ref=>children.push(new Paragraph({text:ref,bullet:{level:0}})));}
+  children.push(new Paragraph({text:"Source references",heading:HeadingLevel.HEADING_1}));if(refs.length)refs.forEach(ref=>children.push(new Paragraph({text:ref,bullet:{level:0}})));else children.push(new Paragraph({text:"No external URLs were embedded in the response."}));
   const doc=new Document({sections:[{properties:{page:{margin:{top:900,right:900,bottom:900,left:900}}},children}]});
   const {Packer}=await import("docx");downloadBlob(await Packer.toBlob(doc),`clinical-aid-summary-${new Date().toISOString().slice(0,10)}.docx`);
 }
@@ -102,7 +102,7 @@ export function ExportMenu({messages,title="Clinical Summary",compact=false}:{me
     try{
       if(format==="md")downloadBlob(new Blob([markdown],{type:"text/markdown;charset=utf-8"}),`clinical-aid-summary-${new Date().toISOString().slice(0,10)}.md`);
       if(format==="txt")downloadBlob(new Blob([plainText(markdown)],{type:"text/plain;charset=utf-8"}),`clinical-aid-summary-${new Date().toISOString().slice(0,10)}.txt`);
-      if(format==="pdf"){const refs=referencesFor(messages);const body=messages.map(m=>`<h2>${m.role==="assistant"?"Clinical Aid":"User"}</h2>${markdownToHtml(m.content)}`).join("<hr/>")+(refs.length?`<section class="sources"><strong>Source references</strong><ul>${refs.map(r=>`<li><a href="${escapeHtml(r)}">${escapeHtml(r)}</a></li>`).join("")}</ul></section>`:"");printPdf(body,title);}
+      if(format==="pdf"){const refs=referencesFor(messages);const body=messages.map(m=>`<h2>${m.role==="assistant"?"Clinical Aid":"User"}</h2>${markdownToHtml(m.content)}`).join("<hr/>")+`<section class="sources"><strong>Source references</strong>${refs.length?`<ul>${refs.map(r=>`<li><a href="${escapeHtml(r)}">${escapeHtml(r)}</a></li>`).join("")}</ul>`:"<p>No external URLs were embedded in the response.</p>"}</section>`;printPdf(body,title);}
       if(format==="docx")await exportDocx(messages,title,stamp);
       setOpen(false);
     }catch(e){window.alert(e instanceof Error?e.message:"Export failed. Please try again.");}
