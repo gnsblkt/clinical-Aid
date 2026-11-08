@@ -117,17 +117,17 @@ export async function POST(request: NextRequest) {
             const fetchResponse = await fetch(efetch.toString(), { cache: "no-store" });
             if (fetchResponse.ok) {
               const xml = await fetchResponse.text();
-              const decodeXml = (v: string) => v.replace(/<[^>]+>/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\\s+/g, " ").trim();
-              const articles = xml.match(/<PubmedArticle[\\s\\S]*?<\\/PubmedArticle>/g) ?? [];
+              const decodeXml = (v: string) => v.replace(/<[^>]+>/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim();
+              const articles = xml.match(/<PubmedArticle[\s\S]*?<\/PubmedArticle>/g) ?? [];
               for (const article of articles) {
                 if (researchSources.length >= 10) break;
-                const title = decodeXml(article.match(/<ArticleTitle>([\\s\\S]*?)<\\/ArticleTitle>/)?.[1] ?? "PubMed article");
-                const abstractParts = [...article.matchAll(/<AbstractText[^>]*>([\\s\\S]*?)<\\/AbstractText>/g)].map(m => decodeXml(m[1])).filter(Boolean);
+                const title = decodeXml(article.match(/<ArticleTitle>([\s\S]*?)<\/ArticleTitle>/)?.[1] ?? "PubMed article");
+                const abstractParts = [...article.matchAll(/<AbstractText[^>]*>([\s\S]*?)<\/AbstractText>/g)].map(m => decodeXml(m[1])).filter(Boolean);
                 const abstract = abstractParts.join(" ");
                 if (!abstract) continue;
-                const author = decodeXml(article.match(/<LastName>(.*?)<\\/LastName>/)?.[1] ?? "PubMed authors");
-                const year = article.match(/<PubDate>[\\s\\S]*?<Year>(\\d{4})<\\/Year>/)?.[1] ?? "n.d.";
-                const pmid = article.match(/<PMID[^>]*>(.*?)<\\/PMID>/)?.[1] ?? "";
+                const author = decodeXml(article.match(/<LastName>(.*?)<\/LastName>/)?.[1] ?? "PubMed authors");
+                const year = article.match(/<PubDate>[\s\S]*?<Year>(\d{4})<\/Year>/)?.[1] ?? "n.d.";
+                const pmid = article.match(/<PMID[^>]*>(.*?)<\/PMID>/)?.[1] ?? "";
                 researchSources.push({ citation: "[" + (researchSources.length + 1) + "]", title, authors: author, year, venue: "PubMed", url: pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + pmid + "/" : "https://pubmed.ncbi.nlm.nih.gov/", abstract: abstract.slice(0, 6000) });
               }
             }
