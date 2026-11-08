@@ -57,3 +57,31 @@
 .clinical-markdown .clinical-section-card>.clinical-section-heading:first-child{margin-top:0;padding-bottom:9px}
 .clinical-markdown .clinical-section-card>.clinical-section-pill:first-child{margin-top:0}
 .dark .clinical-markdown .clinical-section-card{background:#111c2d;border-color:#334155;box-shadow:none}
+
+/* Clinical reader and accessible mobile drawer refinements */
+@media(max-width:760px){
+.sidebar{display:flex!important;position:fixed;z-index:61;inset:0 auto 0 0;width:min(300px,86vw);height:100dvh;overflow-y:auto;transform:translateX(-105%);visibility:hidden;transition:transform .3s ease-in-out,visibility .3s ease-in-out;will-change:transform;box-shadow:15px 0 45px #10182830}
+.sidebar.mobile-open{transform:translateX(0);visibility:visible}
+.mobile-sidebar-backdrop{display:block;position:fixed;inset:0;z-index:60;border:0;padding:0;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);cursor:pointer}
+}
+.drawer-close{margin-left:auto;width:36px;height:36px;border-radius:999px;display:grid;place-items:center;color:#334155;transition:background .15s ease}
+.drawer-close:hover{background:#f1f5f9}
+.message-actions{display:flex;align-items:center;gap:7px;margin-top:10px}
+.message-action{width:32px;height:32px;display:grid;place-items:center;border:1px solid #e2e8f0;border-radius:8px;background:transparent;color:#64748b;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.message-action:hover{background:#f1f5f9;border-color:#cbd5e1;color:#1e40af}
+.message-action:disabled{opacity:.35;cursor:not-allowed}
+.clinical-markdown{font-family:Inter,ui-sans-serif,system-ui,sans-serif;line-height:1.8;color:#1e293b}
+.clinical-markdown .clinical-paragraph{line-height:1.8;margin-bottom:13px}
+.clinical-markdown .clinical-table-wrap{overflow-x:auto;overscroll-behavior-x:contain;margin:16px 0;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.clinical-markdown .clinical-table{min-width:560px;table-layout:auto}
+.clinical-markdown .clinical-table th{white-space:nowrap;min-width:120px}
+.clinical-markdown .clinical-table td{min-width:120px}
+.clinical-markdown .clinical-takeaway{background:rgba(236,253,245,.7);border-left:4px solid #10b981;border-radius:0 12px 12px 0;padding:16px;margin:12px 0;color:#1e293b}
+.clinical-markdown ol.clinical-list{counter-reset:clinical-step;list-style:none;padding-left:0;margin:14px 0 18px}
+.clinical-markdown ol.clinical-list>li{position:relative;margin:0 0 12px;padding:12px 14px 12px 42px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+.clinical-markdown ol.clinical-list>li:before{counter-increment:clinical-step;content:counter(clinical-step);position:absolute;left:12px;top:12px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#eef2ff;color:#4338ca;font-size:11px;font-weight:800}
+.dark .clinical-markdown{color:#e2e8f0}
+.dark .clinical-markdown .clinical-takeaway{background:rgba(6,78,59,.25);color:#d1fae5}
+.dark .clinical-markdown ol.clinical-list>li{background:#111c2d;border-color:#334155}
+.dark .drawer-close{color:#e2e8f0}
+.dark .drawer-close:hover{background:#1e293b}
