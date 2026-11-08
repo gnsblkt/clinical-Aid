@@ -132,7 +132,7 @@ async function proxyRequest(
   messages: ChatMessage[],
   stream: boolean,
   signal?: AbortSignal,
-  researchMode = false
+  mode: "normal" | "textbook" | "deep_research" = "normal"
 ) {
   return fetch("/api/chat", {
     method: "POST",
