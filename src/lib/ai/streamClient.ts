@@ -174,3 +174,30 @@ export async function testProviderConnection(config: ConnectionConfig) {
   // Consume the small response to ensure the provider completed the request.
   await response.arrayBuffer();
 }
+
+export function detectProviderFromKey(value: string): AIProvider | null {
+  const key = value.trim();
+  if (/^AIza[0-9A-Za-z_-]{20,}$/.test(key)) return "gemini";
+  if (/^gsk_[A-Za-z0-9]{20,}$/.test(key)) return "groq";
+  if (/^sk-or-v1-[A-Za-z0-9]{20,}$/.test(key)) return "openrouter";
+  if (/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(key)) return "claude";
+  // DeepSeek and OpenAI both issue sk-prefixed keys; do not guess between them.
+  if (/^sk-[A-Za-z0-9_-]{20,}$/.test(key)) return null;
+  return null;
+}
+
+export async function discoverProviderModels(config: Pick<ConnectionConfig, "provider" | "apiKey" | "baseUrl">): Promise<{id:string;name:string}[]> {
+  const response = await fetch("/api/models", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+    cache: "no-store"
+  });
+  if (!response.ok) {
+    let message = "Unable to retrieve models.";
+    try { const data = await response.json(); message = data.error?.message || data.error || message; } catch {}
+    throw new Error(message);
+  }
+  const data = await response.json();
+  return Array.isArray(data.models) ? data.models : [];
+}
