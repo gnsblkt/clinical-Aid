@@ -13,38 +13,69 @@ export type StreamOptions = {
 };
 export type ConnectionConfig = { provider: AIProvider; apiKey: string; model: string; baseUrl: string };
 
-function readStored(provider: AIProvider, key: string) {
-  return typeof localStorage === "undefined" ? "" : localStorage.getItem("clinical_aid_" + key + "_" + provider) ?? "";
+const PROVIDERS: AIProvider[] = ["gemini", "groq", "openrouter", "deepinfra", "openai", "claude", "deepseek", "custom"];
+
+/** Access browser storage defensively: unavailable during SSR and may throw in restricted contexts. */
+function getBrowserStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
+
+function readStored(provider: AIProvider, key: string) {
+  try {
+    return getBrowserStorage()?.getItem("clinical_aid_" + key + "_" + provider) ?? "";
+  } catch {
+    return "";
+  }
+}
+
 async function errorFromResponse(response: Response) {
   let message = "HTTP " + response.status + " " + response.statusText;
-  try {
-    const data = await response.json();
-    message = data?.error?.message || data?.message || message;
-  } catch {
-    try { message = (await response.text()).slice(0, 1000) || message; } catch { /* keep status */ }
+  const raw = await response.text().catch(() => "");
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      message = data?.error?.message || data?.message || raw.slice(0, 1000);
+    } catch {
+      message = raw.slice(0, 1000);
+    }
   }
   return new Error(message);
 }
+
 function extractText(provider: AIProvider, data: any): string {
   if (provider === "gemini") {
     return (data?.candidates?.[0]?.content?.parts ?? []).map((part: any) => part?.text ?? "").join("");
   }
   if (provider === "claude") {
-    return data?.type === "content_block_delta" && data?.delta?.type === "text_delta" ? data.delta.text ?? "" : "";
+    return data?.type === "content_block_delta" && data?.delta?.type === "text_delta"
+      ? data.delta.text ?? ""
+      : "";
   }
   const content = data?.choices?.[0]?.delta?.content;
   if (typeof content === "string") return content;
   if (Array.isArray(content)) return content.map((part: any) => part?.text ?? "").join("");
   return "";
 }
-async function consumeSSE(response: Response, provider: AIProvider, onChunk: (chunk: string) => void, signal?: AbortSignal) {
+
+async function consumeSSE(
+  response: Response,
+  provider: AIProvider,
+  onChunk: (chunk: string) => void,
+  signal?: AbortSignal
+) {
   if (!response.ok) throw await errorFromResponse(response);
   if (!response.body) throw new Error("The AI proxy returned no response stream.");
+
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let dataLines: string[] = [];
+
   const dispatch = () => {
     if (!dataLines.length) return;
     const data = dataLines.join("\n");
@@ -55,9 +86,10 @@ async function consumeSSE(response: Response, provider: AIProvider, onChunk: (ch
       const text = extractText(provider, parsed);
       if (text) onChunk(text);
     } catch {
-      // Ignore malformed keep-alive or partial SSE events; the next event remains independent.
+      // Ignore malformed keep-alive or partial SSE events; subsequent events remain independent.
     }
   };
+
   try {
     while (true) {
       if (signal?.aborted) throw new DOMException("Request aborted", "AbortError");
@@ -78,19 +110,30 @@ async function consumeSSE(response: Response, provider: AIProvider, onChunk: (ch
     reader.releaseLock();
   }
 }
+
 function configFromOptions(opts: StreamOptions): ConnectionConfig {
-  const provider = opts.provider ?? (typeof localStorage !== "undefined"
-    ? (localStorage.getItem("clinical_aid_active_provider") as AIProvider) || "openai"
-    : "openai");
+  const storedProvider = getBrowserStorage()?.getItem("clinical_aid_active_provider");
+  const provider =
+    opts.provider ??
+    (storedProvider && PROVIDERS.includes(storedProvider as AIProvider) ? (storedProvider as AIProvider) : "openai");
   const apiKey = opts.apiKey ?? readStored(provider, "key");
   const model = opts.model ?? readStored(provider, "model");
   const baseUrl = opts.baseUrl ?? readStored(provider, "base_url");
   return { provider, apiKey, model, baseUrl };
 }
-async function proxyRequest(config: ConnectionConfig, messages: ChatMessage[], stream: boolean, signal?: AbortSignal) {
+
+async function proxyRequest(
+  config: ConnectionConfig,
+  messages: ChatMessage[],
+  stream: boolean,
+  signal?: AbortSignal
+) {
   return fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": stream ? "text/event-stream" : "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: stream ? "text/event-stream" : "application/json"
+    },
     body: JSON.stringify({
       provider: config.provider,
       apiKey: config.apiKey,
@@ -103,6 +146,7 @@ async function proxyRequest(config: ConnectionConfig, messages: ChatMessage[], s
     cache: "no-store"
   });
 }
+
 export async function streamMedicalChat(opts: StreamOptions) {
   try {
     const config = configFromOptions(opts);
@@ -117,6 +161,7 @@ export async function streamMedicalChat(opts: StreamOptions) {
     throw normalized;
   }
 }
+
 export async function testProviderConnection(config: ConnectionConfig) {
   if (!config.apiKey.trim()) throw new Error("API key is required.");
   if (!config.model.trim()) throw new Error("Model ID is required.");
