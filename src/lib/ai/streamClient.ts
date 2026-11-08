@@ -25,12 +25,16 @@ function getBrowserStorage(): Storage | null {
   }
 }
 
-function readStored(provider: AIProvider, key: string) {
+function readBrowserValue(key: string): string {
   try {
-    return getBrowserStorage()?.getItem("clinical_aid_" + key + "_" + provider) ?? "";
+    return getBrowserStorage()?.getItem(key) ?? "";
   } catch {
     return "";
   }
+}
+
+function readStored(provider: AIProvider, key: string): string {
+  return readBrowserValue("clinical_aid_" + key + "_" + provider);
 }
 
 async function errorFromResponse(response: Response) {
