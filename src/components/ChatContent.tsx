@@ -31,8 +31,7 @@ export function AnswerRenderer({content}:{content:string}){
 
 function escapeHtml(value:string){return value.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c] as string));}
 function markdownToHtml(md:string){
-  const lines=md.split("
-");let out="",inList=false,inTable=false;
+  const lines=md.split("\n");let out="",inList=false,inTable=false;
   const closeList=()=>{if(inList){out+="</ul>";inList=false;}};
   for(let i=0;i<lines.length;i++){
     const line=lines[i];
@@ -54,32 +53,11 @@ function markdownToHtml(md:string){
   }
   closeList();if(inTable)out+="</tbody></table>";return out;
 }
-function plainText(md:string){return md.replace(/!\[([^\]]*)\]\([^)]+\)/g,"$1").replace(/\[([^\]]+)\]\(([^)]+)\)/g,"$1 ($2)").replace(/^\s{0,3}#{1,6}\s+/gm,"").replace(/^\s*>\s?/gm,"").replace(/^\s*[-*+]\s+/gm,"• ").replace(/^\s*\d+\.\s+/gm,"• ").replace(/\|/g," ").replace(/^[\s-:]+$/gm,"").replace(/[*_`~]/g,"").replace(/
-{3,}/g,"
-
-").trim();}
-function referencesFor(messages:ExportMessage[]){const all=messages.map(m=>m.content).join("
-");return Array.from(new Set(all.match(/https?:\/\/[^\s)\]>]+/g)||[]));}
+function plainText(md:string){return md.replace(/!\[([^\]]*)\]\([^)]+\)/g,"$1").replace(/\[([^\]]+)\]\(([^)]+)\)/g,"$1 ($2)").replace(/^\s{0,3}#{1,6}\s+/gm,"").replace(/^\s*>\s?/gm,"").replace(/^\s*[-*+]\s+/gm,"• ").replace(/^\s*\d+\.\s+/gm,"• ").replace(/\|/g," ").replace(/^[\s-:]+$/gm,"").replace(/[*_`~]/g,"").replace(/\n{3,}/g,"\n\n").trim();}
+function referencesFor(messages:ExportMessage[]){const all=messages.map(m=>m.content).join("\n");return Array.from(new Set(all.match(/https?:\/\/[^\s)\]>]+/g)||[]));}
 function combinedMarkdown(messages:ExportMessage[],title:string,stamp:string){
   const refs=referencesFor(messages);
-  return `# Clinical Aid - Clinical Summary
-
-${title}
-
-Generated: ${stamp}
-
-`+messages.map(m=>`## ${m.role==="assistant"?"Clinical Aid":"User"}
-
-${m.content}`).join("
-
----
-
-")+"
-
-## Source references
-
-"+(refs.length?refs.map(r=>"- "+r).join("
-"):"No external URLs were embedded in the response.");
+  return `# Clinical Aid - Clinical Summary\n\n${title}\n\nGenerated: ${stamp}\n\n`+messages.map(m=>`## ${m.role==="assistant"?"Clinical Aid":"User"}\n\n${m.content}`).join("\n\n---\n\n")+"\n\n## Source references\n\n"+(refs.length?refs.map(r=>"- "+r).join("\n"):"No external URLs were embedded in the response.");
 }
 function downloadBlob(blob:Blob,name:string){const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
 function printPdf(html:string,title:string){
@@ -102,8 +80,7 @@ async function exportDocx(messages:ExportMessage[],title:string,stamp:string){
   const refs=referencesFor(messages);
   for(const message of messages){
     children.push(new Paragraph({text:message.role==="assistant"?"Clinical Aid":"User",heading:HeadingLevel.HEADING_1}));
-    const lines=message.content.split("
-");let tableRows:string[][]=[];
+    const lines=message.content.split("\n");let tableRows:string[][]=[];
     const flushTable=()=>{if(!tableRows.length)return;const rows=tableRows.filter(row=>!row.every(c=>/^:?-{3,}:?$/.test(c))).map(row=>new TableRow({children:row.map(cell=>new TableCell({width:{size:100/Math.max(1,row.length),type:WidthType.PERCENTAGE},children:[new Paragraph({text:plainText(cell)})]}))}));if(rows.length)children.push(new Table({rows:rows as any,width:{size:100,type:WidthType.PERCENTAGE},columnWidths:[] }));tableRows=[];};
     for(const line of lines){
       if(/^\s*\|.*\|\s*$/.test(line)){tableRows.push(line.trim().replace(/^\||\|$/g,"").split("|").map(x=>x.trim()));continue;}
