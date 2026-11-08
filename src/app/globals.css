@@ -98,3 +98,20 @@
 .dark .research-toggle{background:#111c2d;border-color:#334155;color:#cbd5e1}
 .dark .research-toggle.enabled{background:#052e2b;border-color:#065f46;color:#a7f3d0}
 @media(max-width:760px){.topbar{gap:7px}.research-toggle{padding:6px 7px}.research-toggle-label{font-size:0}.research-toggle-label svg{width:15px;height:15px}.research-toggle-track{width:25px}.research-toggle.enabled .research-toggle-track span{transform:translateX(9px)}}
+
+.query-mode-selector{display:flex;align-items:center;gap:5px;padding:5px;margin:0 0 10px;background:#f5f7fb;border:1px solid #e6ebf2;border-radius:10px;width:fit-content;max-width:100%;flex-wrap:wrap}
+.query-mode-option{display:flex;align-items:center;gap:6px;border:1px solid transparent;background:transparent;color:#64748b;border-radius:7px;padding:8px 11px;font-size:11px;font-weight:650;cursor:pointer;transition:all .16s ease;white-space:nowrap}
+.query-mode-option:hover{background:#fff;color:#334155}
+.query-mode-option.selected{background:#fff;border-color:#dce3ee;box-shadow:0 1px 3px #1720330c;color:#334155}
+.query-mode-option.selected.normal{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.query-mode-option.selected.textbook{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+.query-mode-option.selected.research{background:#faf5ff;border-color:#e9d5ff;color:#7e22ce}
+.query-mode-current{font-size:11px;color:#64748b;font-weight:650;padding:6px 9px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;white-space:nowrap}
+.dark .query-mode-selector{background:#0f172a;border-color:#334155}
+.dark .query-mode-option{color:#cbd5e1}
+.dark .query-mode-option.selected{background:#1e293b;border-color:#475569;color:#f1f5f9}
+.dark .query-mode-option.selected.normal{background:#172554;border-color:#1d4ed8;color:#bfdbfe}
+.dark .query-mode-option.selected.textbook{background:#052e16;border-color:#166534;color:#bbf7d0}
+.dark .query-mode-option.selected.research{background:#3b0764;border-color:#7e22ce;color:#e9d5ff}
+.dark .query-mode-current{background:#111c2d;border-color:#334155;color:#cbd5e1}
+@media(max-width:760px){.query-mode-selector{width:100%;justify-content:space-between;gap:2px;padding:3px}.query-mode-option{flex:1;justify-content:center;padding:8px 5px;font-size:10px;gap:4px}.query-mode-option svg{width:13px;height:13px}.query-mode-current{font-size:0;padding:7px}.research-toggle-wrap{display:none}}
