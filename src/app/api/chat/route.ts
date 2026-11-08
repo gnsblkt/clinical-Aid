@@ -102,6 +102,39 @@ export async function POST(request: NextRequest) {
         const url = typeof p.url === "string" ? p.url : (doi ? `https://doi.org/${doi}` : "");
         return { citation: `[${index + 1}]`, title: String(p.title ?? "Untitled paper"), authors, year: p.year ? String(p.year) : "n.d.", venue: String(p.venue ?? ""), url, abstract: String(p.abstract).slice(0, 6000) };
       });
+      // Supplement Semantic Scholar with recent PubMed-indexed papers and guideline abstracts.
+      try {
+        const esearch = new URL("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi");
+        esearch.searchParams.set("db", "pubmed"); esearch.searchParams.set("term", latestQuestion.slice(0, 400));
+        esearch.searchParams.set("retmax", "5"); esearch.searchParams.set("retmode", "json"); esearch.searchParams.set("sort", "date");
+        const searchResponse = await fetch(esearch.toString(), { cache: "no-store" });
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json() as { esearchresult?: { idlist?: string[] } };
+          const ids = searchData.esearchresult?.idlist ?? [];
+          if (ids.length) {
+            const efetch = new URL("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi");
+            efetch.searchParams.set("db", "pubmed"); efetch.searchParams.set("id", ids.join(",")); efetch.searchParams.set("retmode", "xml");
+            const fetchResponse = await fetch(efetch.toString(), { cache: "no-store" });
+            if (fetchResponse.ok) {
+              const xml = await fetchResponse.text();
+              const decodeXml = (v: string) => v.replace(/<[^>]+>/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\\s+/g, " ").trim();
+              const articles = xml.match(/<PubmedArticle[\\s\\S]*?<\\/PubmedArticle>/g) ?? [];
+              for (const article of articles) {
+                if (researchSources.length >= 10) break;
+                const title = decodeXml(article.match(/<ArticleTitle>([\\s\\S]*?)<\\/ArticleTitle>/)?.[1] ?? "PubMed article");
+                const abstractParts = [...article.matchAll(/<AbstractText[^>]*>([\\s\\S]*?)<\\/AbstractText>/g)].map(m => decodeXml(m[1])).filter(Boolean);
+                const abstract = abstractParts.join(" ");
+                if (!abstract) continue;
+                const author = decodeXml(article.match(/<LastName>(.*?)<\\/LastName>/)?.[1] ?? "PubMed authors");
+                const year = article.match(/<PubDate>[\\s\\S]*?<Year>(\\d{4})<\\/Year>/)?.[1] ?? "n.d.";
+                const pmid = article.match(/<PMID[^>]*>(.*?)<\\/PMID>/)?.[1] ?? "";
+                researchSources.push({ citation: "[" + (researchSources.length + 1) + "]", title, authors: author, year, venue: "PubMed", url: pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + pmid + "/" : "https://pubmed.ncbi.nlm.nih.gov/", abstract: abstract.slice(0, 6000) });
+              }
+            }
+          }
+        }
+      } catch { /* PubMed is a supplemental source; retain Semantic Scholar results if unavailable. */ }
+      researchSources = researchSources.map((paper, index) => ({ ...paper, citation: "[" + (index + 1) + "]" }));
       if (!researchSources.length) return jsonError("Semantic Scholar found no papers with abstracts for this query. Try a more specific query or disable Deep Research Mode.", 404);
       researchContext = researchSources.map(p => `${p.citation} ${p.title} — ${p.authors || "Author details unavailable"} (${p.year}) ${p.venue ? "[" + p.venue + "]" : ""}\nURL: ${p.url || "Not provided"}\nABSTRACT: ${p.abstract}`).join("\n\n---\n\n");
     } catch (error) {
