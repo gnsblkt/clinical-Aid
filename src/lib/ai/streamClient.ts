@@ -6,7 +6,7 @@ export type StreamOptions = {
   apiKey?: string;
   model?: string;
   baseUrl?: string;
-  mode?: "normal" | "textbook" | "deep_research";
+  mode?: "normal" | "textbook" | "deep_research" | "medical_intelligence";
   onChunk: (chunk: string) => void;
   onError?: (error: Error) => void;
   onFinish?: () => void;
@@ -132,7 +132,7 @@ async function proxyRequest(
   messages: ChatMessage[],
   stream: boolean,
   signal?: AbortSignal,
-  mode: "normal" | "textbook" | "deep_research" = "normal"
+  mode: "normal" | "textbook" | "deep_research" | "medical_intelligence" = "normal"
 ) {
   return fetch("/api/chat", {
     method: "POST",
