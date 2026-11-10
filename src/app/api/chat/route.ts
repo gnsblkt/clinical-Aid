@@ -119,8 +119,8 @@ Base the edition on the metadata provided in the chunk header.`;
       "their", "there", "these", "this", "those", "through", "under", "using", "what",
       "when", "where", "which", "while", "with", "would", "your"
     ]);
-    const terms = [...new Set((latestQuestion.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [])
-      .filter(term => !stopWords.has(term)))].slice(0, 18);
+    const matchedTerms: string[] = latestQuestion.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
+    const terms: string[] = [...new Set(matchedTerms.filter((term: string) => !stopWords.has(term)))].slice(0, 18);
     const normalizedQuestion = latestQuestion.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const scoreRelevance = (title: string, abstract: string) => {
       const titleText = title.toLowerCase().replace(/[^a-z0-9]+/g, " ");
