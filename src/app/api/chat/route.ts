@@ -60,9 +60,32 @@ export async function POST(request: NextRequest) {
     if (!agentUrl || !agentKey) return jsonError("Textbook Mode is not configured. Set RAGFLOW_AGENT_URL and RAGFLOW_API_KEY on the server.", 503);
     const question = [...messages].reverse().find((m: any) => m?.role === "user")?.content?.trim();
     if (!question) return jsonError("Textbook Mode requires a user question.", 400);
-    const textbookPrompt = "You are Clinical Aid, an evidence-based medical tutor. You are in 'Textbook Mode'.\n\nINSTRUCTIONS:\n1. You must answer the user's question using ONLY the provided retrieved context from standard medical textbooks.\n2. You must NOT use outside knowledge. If the answer is not in the provided context, state that clearly.\n3. CITE YOUR SOURCES at the end of the explanation in a dedicated '### References' section.\n\nCITATION FORMAT:\nYou must extract the source metadata from the context and format it exactly like this:\n* **[Textbook Name], [Edition]** — Chapter: [Section Path / Chapter Name] (e.g., *Harrison's Principles of Internal Medicine, 21st Edition — Chapter: Heart Failure > Pathophysiology*)\n\nBase the edition on the metadata provided in the chunk header.";
+    const textbookPrompt =
+      `You are Clinical Aid, an evidence-based medical tutor. You are in 'Textbook Mode'.
+
+INSTRUCTIONS:
+1. You must answer the user's question using ONLY the provided retrieved context from standard medical textbooks.
+2. You must NOT use outside knowledge. If the answer is not in the provided context, state that clearly.
+3. CITE YOUR SOURCES at the end of the explanation in a dedicated '### References' section.
+
+CITATION FORMAT:
+You must extract the source metadata from the context and format it exactly like this:
+* **[Textbook Name], [Edition]** — Chapter: [Section Path / Chapter Name] (e.g., *Harrison's Principles of Internal Medicine, 21st Edition — Chapter: Heart Failure > Pathophysiology*)
+
+Base the edition on the metadata provided in the chunk header.`;
     try {
-      const response = await fetch(agentUrl.replace(/\\/+$/, ""), { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + agentKey, Accept: stream ? "text/event-stream" : "application/json" }, body: JSON.stringify({ question, stream, system: textbookPrompt }), signal: request.signal });
+      const cleanedUrl = agentUrl.replace(/\\/+$/, "");
+
+      const response = await fetch(cleanedUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${agentKey}`,
+          Accept: stream ? "text/event-stream" : "application/json",
+        },
+        body: JSON.stringify({ question, stream, system: textbookPrompt }),
+        signal: request.signal,
+      });
       if (!response.ok) return new Response(await response.text(), { status: response.status, headers: { "Content-Type": response.headers.get("content-type") || "application/json" } });
       if (!stream) return new Response(await response.text(), { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
       if (!response.body) return jsonError("RAGFlow returned no response stream.", 502);
