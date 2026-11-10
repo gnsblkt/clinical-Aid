@@ -74,7 +74,7 @@ You must extract the source metadata from the context and format it exactly like
 
 Base the edition on the metadata provided in the chunk header.`;
     try {
-      const cleanedUrl = agentUrl.replace(/\\/+$/, "");
+      const cleanedUrl = agentUrl.replace(/\/+$/, "");
 
       const response = await fetch(cleanedUrl, {
         method: "POST",
