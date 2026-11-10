@@ -1,6 +1,8 @@
 export const runtime = "edge";
 
 import { NextRequest } from "next/server";
+import { MEDICAL_INTELLIGENCE_SYSTEM_PROMPT } from "@/lib/ai/medicalIntelligence";
+import { MEDICAL_INTELLIGENCE_MODULE_PROMPT } from "@/lib/ai/medicalIntelligenceModules";
 
 type Provider = "gemini" | "groq" | "openrouter" | "deepinfra" | "openai" | "claude" | "deepseek" | "custom";
 type Message = { role: "system" | "user" | "assistant"; content: string };
@@ -50,8 +52,8 @@ export async function POST(request: NextRequest) {
   let body: any;
   try { body = await request.json(); } catch { return jsonError("Request body must be valid JSON.", 400); }
   const { provider, apiKey, model, messages, baseUrl, stream = true, mode = "normal" } = body ?? {};
-  const queryMode = ["normal", "textbook", "deep_research"].includes(mode) ? mode : "normal";
-  if (mode !== undefined && !["normal", "textbook", "deep_research"].includes(mode)) return jsonError("Invalid query mode.", 400);
+  const queryMode = ["normal", "textbook", "deep_research", "medical_intelligence"].includes(mode) ? mode : "normal";
+  if (mode !== undefined && !["normal", "textbook", "deep_research", "medical_intelligence"].includes(mode)) return jsonError("Invalid query mode.", 400);
   const providers: Provider[] = ["gemini", "groq", "openrouter", "deepinfra", "openai", "claude", "deepseek", "custom"];
   if (!providers.includes(provider)) return jsonError("Unsupported AI provider.", 400);
   if (queryMode === "textbook") {
@@ -108,7 +110,7 @@ Base the edition on the metadata provided in the chunk header.`;
 
   let researchContext = "";
   let researchSources: { citation: string; title: string; authors: string; year: string; venue: string; url: string; abstract: string; relevance: number }[] = [];
-  if (queryMode === "deep_research") {
+  if (queryMode === "deep_research" || queryMode === "medical_intelligence") {
     const latestQuestion = [...messages].reverse().find((m: any) => m?.role === "user" && typeof m.content === "string")?.content?.trim();
     if (!latestQuestion) return jsonError("Deep Research Mode requires a user question.", 400);
 
@@ -283,10 +285,10 @@ Base the edition on the metadata provided in the chunk header.`;
   } catch (error) { return jsonError(error instanceof Error ? error.message : "Invalid provider endpoint.", 400); }
 
   const normalized = normalizeMessages(messages);
-  if (queryMode === "deep_research" && researchContext) {
+  if ((queryMode === "deep_research" || queryMode === "medical_intelligence") && researchContext) {
     const researchSystem = [
-      "You are Clinical Aid's evidence-synthesis engine. This is a distinct Deep Research task, not a normal general-knowledge chat response.",
-      "Answer the user's exact question using only the supplied peer-reviewed paper abstracts as factual evidence. Do not fill evidence gaps with remembered medical knowledge or invented details.",
+      queryMode === "medical_intelligence" ? "You are Clinical Aid Medical Intelligence evidence-synthesis engine. Apply the Medical Intelligence v3.0 teaching and verification framework." : "You are Clinical Aid evidence-synthesis engine. This is a distinct Deep Research task, not a normal general-knowledge chat response.",
+      "Use supplied peer-reviewed abstracts as evidence for literature findings. Established foundational knowledge may be used to explain concepts, but clearly separate it from retrieved study findings; never invent study methods, populations, outcomes, effect estimates or results.",
       "Identify the question's population, condition, intervention or exposure, comparator, outcomes, diagnosis, prognosis, or mechanism as applicable. Prioritize papers that directly address it.",
       "Synthesize across studies rather than writing one generic paragraph per paper. Explain agreement, disagreement, population or method differences, and what the evidence can and cannot establish.",
       "When abstracts provide the information, report study design, population or sample size, intervention or exposure, comparator, outcomes, effect estimates, and follow-up. Never infer missing methods or results.",
@@ -300,6 +302,9 @@ Base the edition on the metadata provided in the chunk header.`;
       "\n\nRESEARCH PAPERS (retrieved and relevance-ranked from Semantic Scholar and PubMed; abstracts only):\n" + researchContext
     ].join("\n\n");
     normalized[0] = { role: "system", content: normalized[0].content + "\n\n" + researchSystem };
+  }
+  if (queryMode === "medical_intelligence") {
+    normalized[0] = { role: "system", content: normalized[0].content + "\n\n" + MEDICAL_INTELLIGENCE_SYSTEM_PROMPT + "\n\n" + MEDICAL_INTELLIGENCE_MODULE_PROMPT };
   }
   let headers: Record<string, string> = { "Content-Type": "application/json" };
   let payload: Record<string, unknown>;

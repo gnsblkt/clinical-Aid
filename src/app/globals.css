@@ -115,3 +115,6 @@
 .dark .query-mode-option.selected.research{background:#3b0764;border-color:#7e22ce;color:#e9d5ff}
 .dark .query-mode-current{background:#111c2d;border-color:#334155;color:#cbd5e1}
 @media(max-width:760px){.query-mode-selector{width:100%;justify-content:space-between;gap:2px;padding:3px}.query-mode-option{flex:1;justify-content:center;padding:8px 5px;font-size:10px;gap:4px}.query-mode-option svg{width:13px;height:13px}.query-mode-current{font-size:0;padding:7px}.research-toggle-wrap{display:none}}
+
+.query-mode-option.selected.medical{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
+.dark .query-mode-option.selected.medical{background:#052e16;border-color:#166534;color:#bbf7d0}
