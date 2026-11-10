@@ -2,6 +2,7 @@ export const runtime = "edge";
 
 import { NextRequest } from "next/server";
 import { MEDICAL_INTELLIGENCE_SYSTEM_PROMPT } from "@/lib/ai/medicalIntelligence";
+import { MEDICAL_INTELLIGENCE_MODULE_PROMPT } from "@/lib/ai/medicalIntelligenceModules";
 
 type Provider = "gemini" | "groq" | "openrouter" | "deepinfra" | "openai" | "claude" | "deepseek" | "custom";
 type Message = { role: "system" | "user" | "assistant"; content: string };
@@ -303,7 +304,7 @@ Base the edition on the metadata provided in the chunk header.`;
     normalized[0] = { role: "system", content: normalized[0].content + "\n\n" + researchSystem };
   }
   if (queryMode === "medical_intelligence") {
-    normalized[0] = { role: "system", content: normalized[0].content + "\n\n" + MEDICAL_INTELLIGENCE_SYSTEM_PROMPT };
+    normalized[0] = { role: "system", content: normalized[0].content + "\n\n" + MEDICAL_INTELLIGENCE_SYSTEM_PROMPT + "\n\n" + MEDICAL_INTELLIGENCE_MODULE_PROMPT };
   }
   let headers: Record<string, string> = { "Content-Type": "application/json" };
   let payload: Record<string, unknown>;
