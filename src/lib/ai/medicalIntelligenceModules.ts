@@ -68,7 +68,7 @@ export function calculateDoseArithmetic(input: DoseArithmeticInput) {
 /** Identifier-level citation audit; semantic claim support still requires passage-level review. */
 export function auditCitationIds(text: string, allowedIds: string[]) {
   const allowed = new Set(allowedIds);
-  const cited = Array.from(text.matchAll(/\\[([A-Za-z]?S?\\d+)\\]/g), match => match[1]);
+  const cited = Array.from(text.matchAll(/\[([A-Za-z]?S?\d+)\]/g), match => match[1]);
   const unknown = Array.from(new Set(cited.filter(id => !allowed.has(id))));
   return { cited: Array.from(new Set(cited)), unknown, identifierAuditPassed: unknown.length === 0, semanticSupportVerified: false };
 }
