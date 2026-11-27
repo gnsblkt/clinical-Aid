@@ -190,6 +190,19 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
               } catch {}
             }
           }
+          const trailingLine = buffer.trim();
+          if (trailingLine.startsWith("data:")) {
+            const trailingRaw = trailingLine.slice(5).trim();
+            if (trailingRaw && trailingRaw !== "[DONE]") {
+              try {
+                const event = JSON.parse(trailingRaw);
+                addReferences(event?.data?.reference ?? event?.reference ?? event?.data?.data?.reference);
+                const value = event?.data?.answer ?? event?.answer ?? event?.data?.content ?? event?.content ?? event?.data?.delta ?? event?.delta ?? "";
+                const text = typeof value === "string" ? value : (value?.content ?? value?.text ?? "");
+                if (text) emitAnswer(text);
+              } catch {}
+            }
+          }
           emitAnswer("", true);
           const appendix = sourceAppendix();
           if (appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: appendix } }] }) + "\n\n"));
