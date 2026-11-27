@@ -131,7 +131,7 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
           if (typeof value !== "string" || !value.trim()) return "";
           try { const url = new URL(value); return url.protocol === "https:" ? url.toString() : ""; } catch { return ""; }
         };
-        const cleanLabel = (value: unknown) => String(value ?? "").replace(/[\r\n|[\]]/g, " ").trim();
+        const cleanLabel = (value: unknown) => String(value ?? "").replace(/[\r\n|\[\]]/g, " ").trim();
         const sourceAppendix = () => {
           const entries = Object.entries(referenceChunks).sort(([a], [b]) => Number(a) - Number(b));
           if (!entries.length) return "";
@@ -181,7 +181,7 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
           const finalAnswer = answerText.replace(/##(\d+)\$\$/g, (_match, index) => "[" + (Number(index) + 1) + "]");
           const appendix = sourceAppendix();
           if (appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: appendix } }] }) + "\n\n"));
-          if (!finalAnswer && !appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: "The textbook service returned no answer or source records. Please retry or check the indexed knowledge base." } }] }) + "\n\n"));
+          if (!answerText && !appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: "The textbook service returned no answer or source records. Please retry or check the indexed knowledge base." } }] }) + "\n\n"));
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (error) {
