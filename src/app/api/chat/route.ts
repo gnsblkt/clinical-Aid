@@ -122,6 +122,18 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
         let buffer = "";
         let answerText = "";
         const referenceChunks: Record<string, any> = {};
+        let pendingAnswer = "";
+        const emitAnswer = (rawText: string, flush = false) => {
+          pendingAnswer += rawText;
+          const cutoff = flush ? pendingAnswer.length : Math.max(0, pendingAnswer.length - 32);
+          if (!cutoff) return;
+          const raw = pendingAnswer.slice(0, cutoff);
+          pendingAnswer = pendingAnswer.slice(cutoff);
+          const rendered = raw.replace(/##(\d+)\$\$/g, (_match: string, index: string) => "[" + (Number(index) + 1) + "]");
+          answerText += rendered;
+          if (rendered) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: rendered } }] }) + "\n\n"));
+        };
+
         const addReferences = (reference: any) => {
           const chunks = reference?.chunks;
           if (Array.isArray(chunks)) chunks.forEach((chunk: any, index: number) => { if (chunk) referenceChunks[String(index)] = chunk; });
@@ -160,15 +172,7 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
             const result = await reader.read();
             if (result.done) break;
             buffer += decoder.decode(result.value, { stream: true });
-            const lines = buffer.split(/\r?\n/);
-            buffer = lines.pop() || "";
-            for (const line of lines) {
-              if (!line.startsWith("data:")) continue;
-              const raw = line.slice(5).trim();
-              if (!raw || raw === "[DONE]") continue;
-              try {
-                const event = JSON.parse(raw);
-                addReferences(event?.data?.reference ?? event?.reference ?? event?.data?.data?.reference);
+            const lines = buffer.s                if (text) emitAnswer(text); event?.reference ?? event?.data?.data?.reference);
                 const value = event?.data?.answer ?? event?.answer ?? event?.data?.content ?? event?.content ?? event?.data?.delta ?? event?.delta ?? "";
                 const text = typeof value === "string" ? value : (value?.content ?? value?.text ?? "");
                 if (text) {
@@ -179,6 +183,7 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
               } catch {}
             }
           }
+          emitAnswer("", true);
           const appendix = sourceAppendix();
           if (appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: appendix } }] }) + "\n\n"));
           if (!answerText && !appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: "The textbook service returned no answer or source records. Please retry or check the indexed knowledge base." } }] }) + "\n\n"));
