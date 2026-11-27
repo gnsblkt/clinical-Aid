@@ -118,3 +118,10 @@
 
 .query-mode-option.selected.medical{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
 .dark .query-mode-option.selected.medical{background:#052e16;border-color:#166534;color:#bbf7d0}
+
+
+/* Textbook mode source and OpenStax helper */
+.textbook-mode-note{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:9px 2px 0;padding:9px 11px;border:1px solid #dce5f5;border-radius:9px;background:#f7f9ff;color:#64748b;font-size:11px;line-height:1.5}
+.textbook-mode-note a{flex-shrink:0;color:#3158c8;font-weight:650;text-decoration:none}
+.textbook-mode-note a:hover{text-decoration:underline}
+@media(max-width:560px){.textbook-mode-note{align-items:flex-start;flex-direction:column;gap:5px}}
