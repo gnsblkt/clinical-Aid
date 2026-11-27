@@ -119,10 +119,12 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
       const encoder = new TextEncoder(); const decoder = new TextDecoder();
       const transformed = new ReadableStream({ async start(controller) {
         const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
         let buffer = "";
         let answerText = "";
-        const referenceChunks: Record<string, any> = {};
         let pendingAnswer = "";
+        const referenceChunks: Record<string, any> = {};
+
         const emitAnswer = (rawText: string, flush = false) => {
           pendingAnswer += rawText;
           const cutoff = flush ? pendingAnswer.length : Math.max(0, pendingAnswer.length - 32);
@@ -167,19 +169,24 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
           });
           return "\n\n### Retrieved source records\n" + lines.join("\n");
         };
+
         try {
           while (true) {
             const result = await reader.read();
             if (result.done) break;
             buffer += decoder.decode(result.value, { stream: true });
-            const lines = buffer.s                if (text) emitAnswer(text); event?.reference ?? event?.data?.data?.reference);
+            const lines = buffer.split(/\r?\n/);
+            buffer = lines.pop() || "";
+            for (const line of lines) {
+              if (!line.startsWith("data:")) continue;
+              const raw = line.slice(5).trim();
+              if (!raw || raw === "[DONE]") continue;
+              try {
+                const event = JSON.parse(raw);
+                addReferences(event?.data?.reference ?? event?.reference ?? event?.data?.data?.reference);
                 const value = event?.data?.answer ?? event?.answer ?? event?.data?.content ?? event?.content ?? event?.data?.delta ?? event?.delta ?? "";
                 const text = typeof value === "string" ? value : (value?.content ?? value?.text ?? "");
-                if (text) {
-                  const renderedText = text.replace(/##(\\d+)\\$\\$/g, (_match: string, index: string) => "[" + (Number(index) + 1) + "]");
-                  answerText += renderedText;
-                  controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: renderedText } }] }) + "\n\n"));
-                }
+                if (text) emitAnswer(text);
               } catch {}
             }
           }
