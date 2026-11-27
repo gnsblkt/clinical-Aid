@@ -172,13 +172,13 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
                 const value = event?.data?.answer ?? event?.answer ?? event?.data?.content ?? event?.content ?? event?.data?.delta ?? event?.delta ?? "";
                 const text = typeof value === "string" ? value : (value?.content ?? value?.text ?? "");
                 if (text) {
-                  answerText += text;
-                  controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: text } }] }) + "\n\n"));
+                  const renderedText = text.replace(/##(\\d+)\\$\\$/g, (_match: string, index: string) => "[" + (Number(index) + 1) + "]");
+                  answerText += renderedText;
+                  controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: renderedText } }] }) + "\n\n"));
                 }
               } catch {}
             }
           }
-          const finalAnswer = answerText.replace(/##(\d+)\$\$/g, (_match, index) => "[" + (Number(index) + 1) + "]");
           const appendix = sourceAppendix();
           if (appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: appendix } }] }) + "\n\n"));
           if (!answerText && !appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: "The textbook service returned no answer or source records. Please retry or check the indexed knowledge base." } }] }) + "\n\n"));
