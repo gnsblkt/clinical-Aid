@@ -118,12 +118,77 @@ Keep the explanation readable, educational, and clinically responsible. Distingu
       if (!response.body) return jsonError("RAGFlow returned no response stream.", 502);
       const encoder = new TextEncoder(); const decoder = new TextDecoder();
       const transformed = new ReadableStream({ async start(controller) {
-        const reader = response.body!.getReader(); let buffer = "";
-        try { while (true) { const result = await reader.read(); if (result.done) break; buffer += decoder.decode(result.value, { stream: true }); const lines = buffer.split(/\r?\n/); buffer = lines.pop() || "";
-          for (const line of lines) { if (!line.startsWith("data:")) continue; const raw = line.slice(5).trim(); if (!raw || raw === "[DONE]") continue;
-            try { const event = JSON.parse(raw); const value = event?.data?.answer ?? event?.answer ?? event?.data?.content ?? event?.content ?? event?.data?.delta ?? event?.delta ?? ""; const text = typeof value === "string" ? value : (value?.content ?? value?.text ?? ""); if (text) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: text } }] }) + "\\n\\n")); } catch {}
+        const reader = response.body!.getReader();
+        let buffer = "";
+        let answerText = "";
+        const referenceChunks: Record<string, any> = {};
+        const addReferences = (reference: any) => {
+          const chunks = reference?.chunks;
+          if (Array.isArray(chunks)) chunks.forEach((chunk: any, index: number) => { if (chunk) referenceChunks[String(index)] = chunk; });
+          else if (chunks && typeof chunks === "object") Object.entries(chunks).forEach(([key, chunk]) => { if (chunk) referenceChunks[key] = chunk; });
+        };
+        const safeUrl = (value: unknown) => {
+          if (typeof value !== "string" || !value.trim()) return "";
+          try { const url = new URL(value); return url.protocol === "https:" ? url.toString() : ""; } catch { return ""; }
+        };
+        const cleanLabel = (value: unknown) => String(value ?? "").replace(/[\r\n|[\]]/g, " ").trim();
+        const sourceAppendix = () => {
+          const entries = Object.entries(referenceChunks).sort(([a], [b]) => Number(a) - Number(b));
+          if (!entries.length) return "";
+          const lines = entries.map(([key, chunk], index) => {
+            const metadata = chunk?.document_metadata && typeof chunk.document_metadata === "object" ? chunk.document_metadata : {};
+            const name = cleanLabel(chunk?.document_name ?? chunk?.doc_name ?? metadata?.title ?? "Retrieved source");
+            const author = cleanLabel(metadata?.author ?? metadata?.authors);
+            const edition = cleanLabel(metadata?.edition);
+            const chapter = cleanLabel(metadata?.chapter);
+            const section = cleanLabel(metadata?.section ?? metadata?.subsection);
+            const page = cleanLabel(metadata?.page_range ?? metadata?.pages ?? metadata?.page_number ?? metadata?.page);
+            const parts = [author, edition, chapter ? "Chapter: " + chapter : "", section ? "Section: " + section : "", page ? "Page: " + page : ""].filter(Boolean);
+            const sourceUrl = safeUrl(chunk?.url) || safeUrl(metadata?.source_url) || safeUrl(metadata?.document_url) || safeUrl(metadata?.url);
+            const figureUrl = safeUrl(metadata?.figure_url) || safeUrl(metadata?.diagram_url) || safeUrl(metadata?.visual_url);
+            const figureTitle = cleanLabel(metadata?.figure_caption ?? metadata?.figure_title ?? metadata?.diagram_title ?? "Source diagram");
+            const marker = Number.isFinite(Number(key)) ? Number(key) + 1 : index + 1;
+            const details = parts.length ? " — " + parts.join("; ") : "";
+            const link = sourceUrl ? " ([open source](" + sourceUrl + "))" : "";
+            const figure = figureUrl ? "\n   - Diagram: [" + (figureTitle || "Open diagram") + "](" + figureUrl + ")" : "";
+            return "[" + marker + "] **" + name + "**" + details + link + figure;
+          });
+          return "\n\n### Retrieved source records\n" + lines.join("\n");
+        };
+        try {
+          while (true) {
+            const result = await reader.read();
+            if (result.done) break;
+            buffer += decoder.decode(result.value, { stream: true });
+            const lines = buffer.split(/\r?\n/);
+            buffer = lines.pop() || "";
+            for (const line of lines) {
+              if (!line.startsWith("data:")) continue;
+              const raw = line.slice(5).trim();
+              if (!raw || raw === "[DONE]") continue;
+              try {
+                const event = JSON.parse(raw);
+                addReferences(event?.data?.reference ?? event?.reference ?? event?.data?.data?.reference);
+                const value = event?.data?.answer ?? event?.answer ?? event?.data?.content ?? event?.content ?? event?.data?.delta ?? event?.delta ?? "";
+                const text = typeof value === "string" ? value : (value?.content ?? value?.text ?? "");
+                if (text) {
+                  answerText += text;
+                  controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: text } }] }) + "\n\n"));
+                }
+              } catch {}
+            }
           }
-        } controller.enqueue(encoder.encode("data: [DONE]\\n\\n")); controller.close(); } catch (error) { controller.error(error); } finally { reader.releaseLock(); }
+          const finalAnswer = answerText.replace(/##(\d+)\$\$/g, (_match, index) => "[" + (Number(index) + 1) + "]");
+          const appendix = sourceAppendix();
+          if (appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: appendix } }] }) + "\n\n"));
+          if (!finalAnswer && !appendix) controller.enqueue(encoder.encode("data: " + JSON.stringify({ choices: [{ delta: { content: "The textbook service returned no answer or source records. Please retry or check the indexed knowledge base." } }] }) + "\n\n"));
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        } finally {
+          reader.releaseLock();
+        }
       }});
       return new Response(transformed, { status: 200, headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no" } });
     } catch (error) { return jsonError(error instanceof Error ? error.message : "RAGFlow request failed.", 502); }
