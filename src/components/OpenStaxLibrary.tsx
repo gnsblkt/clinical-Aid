@@ -63,7 +63,7 @@ export default function OpenStaxLibrary() {
               ))}
               {!filtered.length && <p className="openstax-empty">No matching title in this starter collection. Browse the full OpenStax catalogue below.</p>}
             </div>
-            <a className="openstax-catalogue-link" href="https://openstax.org/subjects/science" target="_blank" rel="noopener noreferrer">
+            <a className="openstax-catalogue-link" href="https://openstax.org/new-subjects/science-books" target="_blank" rel="noopener noreferrer">
               Explore all OpenStax science textbooks <ExternalLink size={14} />
             </a>
             <div className="openstax-license-note">
