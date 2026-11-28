@@ -125,3 +125,33 @@
 .textbook-mode-note a{flex-shrink:0;color:#3158c8;font-weight:650;text-decoration:none}
 .textbook-mode-note a:hover{text-decoration:underline}
 @media(max-width:560px){.textbook-mode-note{align-items:flex-start;flex-direction:column;gap:5px}}
+
+/* OpenStax external textbook library */
+.openstax-nav{margin-top:2px}
+.openstax-overlay{position:fixed;inset:0;z-index:80;background:#1018288c;display:grid;place-items:center;padding:16px}
+.openstax-dialog{width:min(680px,100%);max-height:min(88vh,820px);overflow:auto;background:#fff;border:1px solid #e5eaf2;border-radius:18px;padding:22px;box-shadow:0 28px 90px #0b122033}
+.openstax-header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.openstax-heading-icon{width:42px;height:42px;border-radius:12px;background:#edf2ff;color:#4268e8;display:grid;place-items:center;flex-shrink:0}
+.openstax-heading-copy{min-width:0;flex:1}
+.openstax-heading-copy h2{font-size:19px;font-weight:750;letter-spacing:-.4px;margin:0;color:#172033}
+.openstax-heading-copy p{font-size:12px;color:#7c879a;margin:4px 0 0}
+.openstax-close{width:34px;height:34px;border:1px solid #e7eaf0;border-radius:9px;background:#fff;color:#6c778a;display:grid;place-items:center;cursor:pointer}
+.openstax-search{display:flex;align-items:center;gap:9px;border:1px solid #dfe5ef;border-radius:10px;padding:0 12px;color:#8994a7;margin-bottom:14px}
+.openstax-search:focus-within{border-color:#8ca3f5;box-shadow:0 0 0 3px #4268e814}
+.openstax-search input{width:100%;height:42px;border:0;outline:0;background:transparent;font:inherit;color:#263449}
+.openstax-book-list{display:grid;gap:10px}
+.openstax-book{display:flex;gap:13px;padding:15px;border:1px solid #e7eaf0;border-radius:12px;background:#fff}
+.openstax-book-mark{width:36px;height:36px;flex-shrink:0;border-radius:10px;background:#f3f5fb;color:#536baf;display:grid;place-items:center}
+.openstax-book-copy{min-width:0}
+.openstax-book-copy h3{margin:0;font-size:14px;font-weight:700;color:#172033}
+.openstax-book-copy>span{display:block;margin-top:3px;color:#718099;font-size:11px}
+.openstax-book-copy p{margin:8px 0 9px;color:#536176;font-size:12px;line-height:1.6}
+.openstax-book-copy a,.openstax-catalogue-link{display:inline-flex;align-items:center;gap:6px;color:#315fd6;font-size:12px;font-weight:650;text-decoration:none}
+.openstax-book-copy a:hover,.openstax-catalogue-link:hover{text-decoration:underline}
+.openstax-empty{padding:20px;text-align:center;color:#778196;font-size:12px}
+.openstax-catalogue-link{margin:16px 0 14px}
+.openstax-license-note{padding:12px 14px;background:#f5f7fb;border-radius:10px;color:#5d687b}
+.openstax-license-note strong{font-size:11px;color:#344158}
+.openstax-license-note p{font-size:11px;line-height:1.55;margin:5px 0 0}
+.openstax-footer{font-size:10px;line-height:1.5;color:#929bad;margin-top:12px}
+@media(max-width:600px){.openstax-dialog{padding:17px;border-radius:15px;max-height:92vh}.openstax-heading-copy h2{font-size:17px}.openstax-book{padding:12px;gap:10px}}
